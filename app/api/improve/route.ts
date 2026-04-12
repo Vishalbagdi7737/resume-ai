@@ -1,17 +1,57 @@
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
-  const { experience } = await req.json()
+  try {
+    const { experience } = await req.json()
 
-  const result = `Here are your improved resume bullet points:
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a professional resume writer. 
+Rewrite the following work experience into 4 powerful 
+professional resume bullet points.
+Use strong action verbs and add measurable results.
+Start each bullet point with •
 
-- Successfully ${experience.trim()} resulting in measurable business impact and improved team productivity by 30%
+Experience:
+${experience}
 
-- Spearheaded key initiatives related to ${experience.trim()} which led to significant cost savings and process improvements
+Write only the 4 bullet points. Nothing else.`,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    )
 
-- Collaborated cross-functionally to deliver ${experience.trim()} on time and under budget, receiving recognition from senior leadership
+    const data = await response.json()
 
-- Leveraged technical expertise to optimise ${experience.trim()} improving overall efficiency by 40%`
+    if (!response.ok) {
+      console.error("Gemini error:", JSON.stringify(data))
+      return NextResponse.json(
+        { result: "Something went wrong. Please try again." },
+        { status: 500 }
+      )
+    }
 
-  return NextResponse.json({ result })
+    const text = data.candidates[0].content.parts[0].text
+    return NextResponse.json({ result: text })
+
+  } catch (error: any) {
+    console.error("Error:", error?.message)
+    return NextResponse.json(
+      { result: "Something went wrong. Please try again." },
+      { status: 500 }
+    )
+  }
 }
