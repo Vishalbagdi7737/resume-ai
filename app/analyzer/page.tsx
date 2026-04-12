@@ -1,130 +1,189 @@
-export default function Home() {
+"use client"
+import { useState } from "react"
+
+export default function Analyzer() {
+  const [resume, setResume] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [score, setScore] = useState<number | null>(null)
+  const [strengths, setStrengths] = useState<string[]>([])
+  const [weaknesses, setWeaknesses] = useState<string[]>([])
+  const [suggestions, setSuggestions] = useState<string[]>([])
+
+  function parseResult(text: string) {
+    const scoreMatch = text.match(/SCORE:\s*(\d+)/)
+    if (scoreMatch) setScore(parseInt(scoreMatch[1]))
+
+    const strengthsMatch = text.match(/STRENGTHS:\n([\s\S]*?)(?=\n\nWEAKNESSES)/)
+    if (strengthsMatch) {
+      const items = strengthsMatch[1].split("\n").filter(s => s.startsWith("- ")).map(s => s.replace("- ", ""))
+      setStrengths(items)
+    }
+
+    const weaknessesMatch = text.match(/WEAKNESSES:\n([\s\S]*?)(?=\n\nSUGGESTIONS)/)
+    if (weaknessesMatch) {
+      const items = weaknessesMatch[1].split("\n").filter(s => s.startsWith("- ")).map(s => s.replace("- ", ""))
+      setWeaknesses(items)
+    }
+
+    const suggestionsMatch = text.match(/SUGGESTIONS:\n([\s\S]*)/)
+    if (suggestionsMatch) {
+      const items = suggestionsMatch[1].split("\n").filter(s => s.startsWith("- ")).map(s => s.replace("- ", ""))
+      setSuggestions(items)
+    }
+  }
+
+  async function analyzeResume() {
+    setLoading(true)
+    setScore(null)
+    setStrengths([])
+    setWeaknesses([])
+    setSuggestions([])
+
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resume }),
+    })
+    const data = await response.json()
+    parseResult(data.result)
+    setLoading(false)
+  }
+
+  const scoreColor = score !== null
+    ? score >= 70 ? "#00b4ff"
+    : score >= 40 ? "#f59e0b"
+    : "#ef4444"
+    : "#00b4ff"
+
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#ffffff", fontFamily: "'Segoe UI', sans-serif" }}>
+    <main style={{ minHeight: "100vh", backgroundColor: "#050a15", fontFamily: "'Segoe UI', sans-serif" }}>
 
       {/* Navbar */}
-      <nav style={{ backgroundColor: "#ffffff", padding: "16px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "32px", height: "32px", backgroundColor: "#0a66c2", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ color: "white", fontSize: "16px", fontWeight: "bold" }}>R</span>
+      <nav style={{ padding: "20px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e2d40" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "36px", height: "36px", background: "linear-gradient(135deg, #00b4ff, #0066ff)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: "white", fontSize: "18px", fontWeight: "bold" }}>R</span>
           </div>
-          <span style={{ fontSize: "20px", fontWeight: "700", color: "#0a0a0a" }}>ResumeAI</span>
+          <span style={{ fontSize: "20px", fontWeight: "700", color: "#ffffff" }}>ResumeAI</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <a href="/analyzer" style={{ color: "#0a66c2", fontSize: "14px", textDecoration: "none", fontWeight: "500" }}>Analyzer</a>
-          <a href="/builder" style={{ color: "#0a66c2", fontSize: "14px", textDecoration: "none", fontWeight: "500" }}>Builder</a>
-          <a href="/builder" style={{ backgroundColor: "#0a66c2", color: "white", padding: "8px 20px", borderRadius: "20px", fontSize: "14px", fontWeight: "600", textDecoration: "none" }}>
-            Get Started Free
-          </a>
-        </div>
+        <a href="/" style={{ color: "#64748b", fontSize: "14px", textDecoration: "none" }}>← Back to Home</a>
       </nav>
 
-      {/* Hero Section */}
-      <section style={{ textAlign: "center", padding: "80px 24px 60px", backgroundColor: "#f8faff" }}>
-        <div style={{ display: "inline-block", backgroundColor: "#e8f0fe", color: "#0a66c2", padding: "6px 16px", borderRadius: "999px", fontSize: "13px", fontWeight: "600", marginBottom: "24px" }}>
-          AI Powered Career Tools
-        </div>
-        <h1 style={{ fontSize: "52px", fontWeight: "800", color: "#0a0a0a", marginBottom: "20px", lineHeight: "1.15", maxWidth: "700px", margin: "0 auto 20px" }}>
-          Land Your Dream Job with <span style={{ color: "#0a66c2" }}>AI-Powered</span> Resume Tools
-        </h1>
-        <p style={{ fontSize: "18px", color: "#64748b", marginBottom: "40px", maxWidth: "560px", margin: "0 auto 40px", lineHeight: "1.7" }}>
-          Get your resume scored, rewritten, and optimized by AI in seconds. Used by thousands of job seekers across India.
-        </p>
-        <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/analyzer" style={{ display: "inline-block", backgroundColor: "#0a66c2", color: "white", padding: "14px 32px", borderRadius: "24px", fontSize: "16px", fontWeight: "600", textDecoration: "none" }}>
-            Analyze My Resume
-          </a>
-          <a href="/builder" style={{ display: "inline-block", backgroundColor: "white", color: "#0a66c2", padding: "14px 32px", borderRadius: "24px", fontSize: "16px", fontWeight: "600", textDecoration: "none", border: "2px solid #0a66c2" }}>
-            Rewrite Bullet Points
-          </a>
-        </div>
-        <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "16px" }}>
-          Free to use — no credit card needed
-        </p>
-      </section>
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "48px 24px" }}>
 
-      {/* Stats */}
-      <section style={{ backgroundColor: "#0a66c2", padding: "40px 24px" }}>
-        <div style={{ display: "flex", justifyContent: "center", gap: "64px", flexWrap: "wrap", maxWidth: "800px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "36px", fontWeight: "800", color: "white", margin: 0 }}>10,000+</p>
-            <p style={{ fontSize: "14px", color: "#bfdbfe", margin: 0 }}>Resumes analyzed</p>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ display: "inline-block", backgroundColor: "#0a1628", color: "#00b4ff", padding: "6px 16px", borderRadius: "999px", fontSize: "13px", fontWeight: "600", marginBottom: "16px", border: "1px solid #1e3a5f" }}>
+            AI Resume Analysis
           </div>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "36px", fontWeight: "800", color: "white", margin: 0 }}>3x</p>
-            <p style={{ fontSize: "14px", color: "#bfdbfe", margin: 0 }}>More interviews</p>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "36px", fontWeight: "800", color: "white", margin: 0 }}>30 sec</p>
-            <p style={{ fontSize: "14px", color: "#bfdbfe", margin: 0 }}>To get your score</p>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "36px", fontWeight: "800", color: "white", margin: 0 }}>100%</p>
-            <p style={{ fontSize: "14px", color: "#bfdbfe", margin: 0 }}>Free to use</p>
-          </div>
+          <h1 style={{ fontSize: "36px", fontWeight: "800", color: "#ffffff", marginBottom: "12px" }}>
+            Resume Analyzer
+          </h1>
+          <p style={{ color: "#475569", fontSize: "16px" }}>
+            Paste your full resume and get an instant AI score with detailed feedback
+          </p>
         </div>
-      </section>
 
-      {/* Features */}
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "80px 24px" }}>
-        <h2 style={{ textAlign: "center", fontSize: "36px", fontWeight: "800", color: "#0a0a0a", marginBottom: "12px" }}>
-          Everything you need to get hired
-        </h2>
-        <p style={{ textAlign: "center", color: "#64748b", fontSize: "16px", marginBottom: "48px" }}>
-          Two powerful AI tools built specifically for job seekers
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
+        {/* Input Box */}
+        <div style={{ backgroundColor: "#070e1a", borderRadius: "16px", padding: "24px", marginBottom: "16px", border: "1px solid #1e2d40" }}>
+          <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#94a3b8", marginBottom: "12px" }}>
+            PASTE YOUR RESUME HERE
+          </label>
+          <textarea
+            style={{ width: "100%", height: "220px", padding: "16px", border: "1px solid #1e2d40", borderRadius: "12px", fontSize: "14px", color: "#e2e8f0", backgroundColor: "#060d1a", resize: "none", boxSizing: "border-box", outline: "none", lineHeight: "1.7" }}
+            placeholder="Paste your entire resume here — name, skills, experience, education, projects..."
+            value={resume}
+            onChange={(e) => setResume(e.target.value)}
+          />
+        </div>
 
-          <div style={{ backgroundColor: "#f8faff", borderRadius: "16px", padding: "32px", border: "1px solid #e2e8f0" }}>
-            <div style={{ width: "48px", height: "48px", backgroundColor: "#0a66c2", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "20px" }}>
-              <span style={{ fontSize: "24px" }}>📊</span>
+        {/* Button */}
+        <button
+          onClick={analyzeResume}
+          disabled={loading || !resume}
+          style={{ width: "100%", background: loading || !resume ? "#0a1628" : "linear-gradient(135deg, #00b4ff, #0066ff)", color: loading || !resume ? "#334155" : "white", padding: "16px", borderRadius: "12px", fontSize: "16px", fontWeight: "700", border: "none", cursor: loading || !resume ? "not-allowed" : "pointer", marginBottom: "40px", letterSpacing: "0.5px" }}
+        >
+          {loading ? "🤖 AI is analyzing your resume..." : "Analyze My Resume ✨"}
+        </button>
+
+        {/* Results */}
+        {score !== null && (
+          <div>
+
+            {/* Score Card */}
+            <div style={{ backgroundColor: "#070e1a", borderRadius: "20px", padding: "40px", border: "1px solid #1e2d40", textAlign: "center", marginBottom: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#475569", marginBottom: "8px", fontWeight: "600", letterSpacing: "1px" }}>YOUR RESUME SCORE</p>
+              <p style={{ fontSize: "80px", fontWeight: "800", color: scoreColor, margin: "0 0 8px", lineHeight: 1 }}>{score}</p>
+              <p style={{ fontSize: "16px", color: "#334155", margin: "0 0 24px" }}>out of 100</p>
+              <div style={{ backgroundColor: "#060d1a", borderRadius: "999px", height: "10px", overflow: "hidden" }}>
+                <div style={{ width: `${score}%`, background: `linear-gradient(90deg, #00b4ff, #0066ff)`, height: "100%", borderRadius: "999px", transition: "width 1.5s ease" }}></div>
+              </div>
+              <p style={{ marginTop: "12px", fontSize: "14px", color: score >= 70 ? "#00b4ff" : score >= 40 ? "#f59e0b" : "#ef4444", fontWeight: "600" }}>
+                {score >= 70 ? "🎉 Strong Resume!" : score >= 40 ? "⚠️ Needs Improvement" : "❌ Major Issues Found"}
+              </p>
             </div>
-            <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#0a0a0a", marginBottom: "12px" }}>Resume Analyzer</h3>
-            <p style={{ color: "#64748b", fontSize: "15px", lineHeight: "1.7", marginBottom: "20px" }}>Get an instant AI score out of 100. See your strengths, weaknesses and exactly what to fix to land more interviews.</p>
-            <a href="/analyzer" style={{ color: "#0a66c2", fontSize: "14px", fontWeight: "600", textDecoration: "none" }}>Try Analyzer →</a>
-          </div>
 
-          <div style={{ backgroundColor: "#f8faff", borderRadius: "16px", padding: "32px", border: "1px solid #e2e8f0" }}>
-            <div style={{ width: "48px", height: "48px", backgroundColor: "#0a66c2", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "20px" }}>
-              <span style={{ fontSize: "24px" }}>✍️</span>
+            {/* Strengths */}
+            {strengths.length > 0 && (
+              <div style={{ backgroundColor: "#070e1a", borderRadius: "16px", padding: "28px", border: "1px solid #0d3321", marginBottom: "16px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#00b4ff", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  ✅ Strengths
+                </h3>
+                {strengths.map((s, i) => (
+                  <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "flex-start" }}>
+                    <span style={{ color: "#00b4ff", marginTop: "2px", flexShrink: 0 }}>→</span>
+                    <p style={{ color: "#94a3b8", fontSize: "14px", margin: 0, lineHeight: "1.6" }}>{s}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Weaknesses */}
+            {weaknesses.length > 0 && (
+              <div style={{ backgroundColor: "#070e1a", borderRadius: "16px", padding: "28px", border: "1px solid #2d1a00", marginBottom: "16px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#f59e0b", marginBottom: "16px" }}>
+                  ⚠️ Weaknesses
+                </h3>
+                {weaknesses.map((w, i) => (
+                  <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "flex-start" }}>
+                    <span style={{ color: "#f59e0b", marginTop: "2px", flexShrink: 0 }}>→</span>
+                    <p style={{ color: "#94a3b8", fontSize: "14px", margin: 0, lineHeight: "1.6" }}>{w}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Suggestions */}
+            {suggestions.length > 0 && (
+              <div style={{ backgroundColor: "#070e1a", borderRadius: "16px", padding: "28px", border: "1px solid #1e2d40", marginBottom: "16px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#a78bfa", marginBottom: "16px" }}>
+                  💡 Suggestions to improve
+                </h3>
+                {suggestions.map((s, i) => (
+                  <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "flex-start" }}>
+                    <span style={{ color: "#a78bfa", marginTop: "2px", flexShrink: 0 }}>→</span>
+                    <p style={{ color: "#94a3b8", fontSize: "14px", margin: 0, lineHeight: "1.6" }}>{s}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Try Builder CTA */}
+            <div style={{ backgroundColor: "#070e1a", borderRadius: "16px", padding: "28px", border: "1px solid #1e2d40", textAlign: "center", marginTop: "24px" }}>
+              <p style={{ color: "#ffffff", fontWeight: "700", fontSize: "18px", marginBottom: "8px" }}>
+                Want to fix your bullet points?
+              </p>
+              <p style={{ color: "#475569", fontSize: "14px", marginBottom: "20px" }}>
+                Use our AI Resume Writer to rewrite your experience
+              </p>
+              <a href="/builder" style={{ display: "inline-block", background: "linear-gradient(135deg, #00b4ff, #0066ff)", color: "white", padding: "12px 32px", borderRadius: "999px", fontSize: "14px", fontWeight: "600", textDecoration: "none" }}>
+                Rewrite My Resume →
+              </a>
             </div>
-            <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#0a0a0a", marginBottom: "12px" }}>AI Resume Writer</h3>
-            <p style={{ color: "#64748b", fontSize: "15px", lineHeight: "1.7", marginBottom: "20px" }}>Paste your weak bullet points and AI instantly rewrites them into powerful, professional statements that impress recruiters.</p>
-            <a href="/builder" style={{ color: "#0a66c2", fontSize: "14px", fontWeight: "600", textDecoration: "none" }}>Try Writer →</a>
+
           </div>
-
-          <div style={{ backgroundColor: "#f8faff", borderRadius: "16px", padding: "32px", border: "1px solid #e2e8f0" }}>
-            <div style={{ width: "48px", height: "48px", backgroundColor: "#0a66c2", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "20px" }}>
-              <span style={{ fontSize: "24px" }}>🎯</span>
-            </div>
-            <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#0a0a0a", marginBottom: "12px" }}>ATS Optimized</h3>
-            <p style={{ color: "#64748b", fontSize: "15px", lineHeight: "1.7", marginBottom: "20px" }}>Our AI ensures your resume passes Applicant Tracking Systems used by top companies like TCS, Infosys and Google.</p>
-            <a href="/analyzer" style={{ color: "#0a66c2", fontSize: "14px", fontWeight: "600", textDecoration: "none" }}>Learn More →</a>
-          </div>
-
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section style={{ backgroundColor: "#0a0a0a", padding: "80px 24px", textAlign: "center" }}>
-        <h2 style={{ fontSize: "36px", fontWeight: "800", color: "white", marginBottom: "16px" }}>
-          Ready to get more interviews?
-        </h2>
-        <p style={{ color: "#94a3b8", fontSize: "16px", marginBottom: "32px" }}>
-          Join thousands of job seekers who improved their resume with AI
-        </p>
-        <a href="/analyzer" style={{ display: "inline-block", backgroundColor: "#0a66c2", color: "white", padding: "16px 40px", borderRadius: "24px", fontSize: "16px", fontWeight: "600", textDecoration: "none" }}>
-          Analyze My Resume Free
-        </a>
-      </section>
-
-      {/* Footer */}
-      <footer style={{ backgroundColor: "#0a0a0a", borderTop: "1px solid #1e293b", padding: "24px", textAlign: "center" }}>
-        <p style={{ color: "#475569", fontSize: "13px", margin: 0 }}>
-          © 2025 ResumeAI — Built by Vishal Meena | Dausa, Rajasthan 🇮🇳
-        </p>
-      </footer>
-
+        )}
+      </div>
     </main>
   )
 }
